@@ -1,4 +1,11 @@
 <Solution>
-  <Project Path="Polygon/Polygon.csproj" />
-  <Project Path="Signals/Signals.csproj" />
+  <Folder Name="/Foundation/">
+    <Project Path="Signals/Signals.csproj" />
+  </Folder>
+  <Folder Name="/Polygon/">
+    <Project Path="Polygon/Polygon.csproj" />
+  </Folder>
+  <Folder Name="/Templates/">
+    <Project Path="SampleSignals/SampleSignals.csproj" />
+  </Folder>
 </Solution>
