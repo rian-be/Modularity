@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Polygon/Polygon.csproj" />
+  <Project Path="Signals/Signals.csproj" />
+</Solution>
