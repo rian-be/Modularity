@@ -1,11 +1,13 @@
 <Solution>
-  <Folder Name="/Foundation/">
-    <Project Path="Signals/Signals.csproj" />
+  <Folder Name="/Foundation/" />
+  <Folder Name="/Foundation/Signals/">
+    <Project Path="Foundation/Signals/Signals.ApiBase/Signals.ApiBase.csproj" />
+    <Project Path="Foundation/Signals/Signals/Signals.csproj" />
   </Folder>
   <Folder Name="/Polygon/">
     <Project Path="Polygon/Polygon.csproj" />
   </Folder>
   <Folder Name="/Templates/">
-    <Project Path="SampleSignals/SampleSignals.csproj" />
+    <Project Path="Templates/SampleSignals/SampleSignals.csproj" />
   </Folder>
 </Solution>
