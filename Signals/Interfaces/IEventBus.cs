@@ -34,6 +34,9 @@ public interface IEventBus
     /// <param name="filter">Optional filter function; handler is called only if filter returns true.</param>
     void Subscribe<TEvent>(Func<TEvent, Task> handler, int priority = 0, Func<TEvent, bool>? filter = null) where TEvent : IEvent;
 
+    void Subscribe<TEvent>(Func<TEvent, EventContext, Task> handler) where TEvent : IEvent;
+
+
     /// <summary>
     /// Subscribes a one-time handler for a specific event type. Handler is removed after first execution.
     /// </summary>
@@ -49,4 +52,10 @@ public interface IEventBus
     /// <typeparam name="TEvent">The type of event to unsubscribe from.</typeparam>
     /// <param name="handler">The async handler function to remove.</param>
     void Unsubscribe<TEvent>(Func<TEvent, Task> handler) where TEvent : IEvent;
+    
+    void Unsubscribe<TEvent>(Func<TEvent, EventContext, Task> handler) where TEvent : IEvent;
+
+    
+    void Subscribe(Type eventType, Func<IEvent, Task> handler);
+    void Unsubscribe(Type eventType, Func<IEvent, Task> handler);
 }

@@ -19,14 +19,6 @@ namespace Signals;
 public sealed class EventBus(ISubscriptionManager subscriptionManager, IPublisher publisher)
     : IEventBus
 {
-    /*
-    public EventBus(ISubscriptionManager subscriptionManager, IPublisher publisher)
-    {
-        _subscriptionManager = subscriptionManager;
-        _publisher = publisher;
-    }
-    */
-
     /// <inheritdoc />
     public void Subscribe<TEvent>(
         Func<TEvent, Task> handler,
@@ -34,8 +26,20 @@ public sealed class EventBus(ISubscriptionManager subscriptionManager, IPublishe
         Func<TEvent, bool>? filter = null)
         where TEvent : IEvent
         => subscriptionManager.Subscribe(handler, priority, filter);
-
+    
     /// <inheritdoc />
+    public void Subscribe<TEvent>(Func<TEvent, EventContext, Task> handler) where TEvent : IEvent
+    {
+        Subscribe((Func<TEvent, Task>)Wrapper);
+        return;
+
+        Task Wrapper(TEvent evt)
+        {
+            var ctx = EventContext.Create();
+            return handler(evt, ctx);
+        }
+    }
+    
     public void SubscribeOnce<TEvent>(
         Func<TEvent, Task> handler,
         int priority = 0,
@@ -47,6 +51,35 @@ public sealed class EventBus(ISubscriptionManager subscriptionManager, IPublishe
     public void Unsubscribe<TEvent>(Func<TEvent, Task> handler)
         where TEvent : IEvent
         => subscriptionManager.Unsubscribe(handler);
+
+    public void Unsubscribe<TEvent>(Func<TEvent, EventContext, Task> handler) where TEvent : IEvent
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <inheritdoc />
+    public void Subscribe(Type eventType, Func<IEvent, Task> handler)
+    {
+        if (!typeof(IEvent).IsAssignableFrom(eventType))
+            throw new ArgumentException("Type must implement IEvent", nameof(eventType));
+
+        var method = typeof(ISubscriptionManager)
+            .GetMethod(nameof(ISubscriptionManager.Subscribe))!
+            .MakeGenericMethod(eventType);
+        method.Invoke(subscriptionManager, [handler, 0, null]);
+    }
+
+    /// <inheritdoc />
+    public void Unsubscribe(Type eventType, Func<IEvent, Task> handler)
+    {
+        if (!typeof(IEvent).IsAssignableFrom(eventType))
+            throw new ArgumentException("Type must implement IEvent", nameof(eventType));
+
+        var method = typeof(ISubscriptionManager)
+            .GetMethod(nameof(ISubscriptionManager.Unsubscribe))!
+            .MakeGenericMethod(eventType);
+        method.Invoke(subscriptionManager, [handler]);
+    }
 
     /// <inheritdoc />
     public Task Publish(IEvent evt)

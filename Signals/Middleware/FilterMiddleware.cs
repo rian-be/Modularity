@@ -16,15 +16,20 @@ namespace Signals.Middleware;
 /// <item>Can be chained with other <see cref="IEventMiddleware"/> components in the pipeline.</item>
 /// </list>
 /// </remarks>
-public sealed class FilterMiddleware<TEvent>(Func<TEvent, bool> predicate) : IEventMiddleware
-    where TEvent : IEvent
+public sealed class FilterMiddleware : IEventMiddleware
 {
+    private readonly Func<IEvent, bool> _predicate;
+
+    public FilterMiddleware(Func<IEvent, bool> predicate)
+    {
+        _predicate = predicate;
+    }
+
     public async Task InvokeAsync(IEvent evt, EventContext ctx, EventDelegate next)
     {
-        if (evt is TEvent te && !predicate(te))
-        {
+        if (!_predicate(evt))
             return;
-        }
+
         await next(evt, ctx);
     }
 }

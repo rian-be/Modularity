@@ -1,6 +1,6 @@
-﻿using Signals.Interfaces;
+﻿using Signals.Loader;
 
-namespace Signals.Loader;
+namespace Signals.Interfaces;
 
 /// <summary>
 /// Represents a modular plugin that can register and unregister signals (events and handlers) with an <see cref="IEventBus"/>.
