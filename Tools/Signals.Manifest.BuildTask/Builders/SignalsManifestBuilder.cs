@@ -25,10 +25,10 @@ public static class SignalsManifestBuilder
         var name = moduleType.Name;
 
         var version =
-            assemblyName.Version?.ToString() ??
-            asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ??
-            "1.0.0";
-
+            assemblyName.Version != null
+                ? $"{assemblyName.Version.Major}.{assemblyName.Version.Minor}.{assemblyName.Version.Build}"
+                : asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "1.0.0";
+        
         return new SignalsManifest
         {
             Id = id,
@@ -38,7 +38,7 @@ public static class SignalsManifestBuilder
             Dll = Path.GetFileName(assemblyPath),
             Author = "Unknown",
             Description = $"AUTO-GENERATED manifest for {name}",
-            ApiVersion = "1.0",
+            ApiVersion = "1.0.0",
             Dependencies = []
         };
     }

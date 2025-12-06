@@ -4,6 +4,7 @@ using Signals.Manifest.BuildTask.Loader;
 using Signals.Manifest.BuildTask.Logging;
 using Signals.Manifest.BuildTask.Models;
 using Signals.Manifest.BuildTask.Utils;
+using Signals.Manifest.BuildTask.Validators;
 using Task = Microsoft.Build.Utilities.Task;
 
 namespace Signals.Manifest.BuildTask;
@@ -23,9 +24,9 @@ namespace Signals.Manifest.BuildTask;
 /// </remarks>
 public sealed class GenerateSignalManifestTask : Task
 {
-    [Required] private string AssemblyPath { get; set; } = null!;
+    [Required] public string AssemblyPath { get; set; } = null!;
 
-    [Required] private string OutputPath { get; set; } = null!;
+    [Required] public string OutputPath { get; set; } = null!;
     
     public override bool Execute()
     {
@@ -44,7 +45,11 @@ public sealed class GenerateSignalManifestTask : Task
             }
 
             var manifest = SignalsManifestBuilder.CreateDefault(moduleType, AssemblyPath);
-
+            if (!SignalsManifestValidator.Validate(manifest, Log))
+            {
+                return false; // Build fail
+            }
+            
             var outputFile = FileUtils.GetOutputFilePath(OutputPath, manifest.Id + ".signal.json");
 
             if (File.Exists(outputFile))

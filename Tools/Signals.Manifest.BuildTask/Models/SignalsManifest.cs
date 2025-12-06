@@ -15,13 +15,13 @@ public sealed class SignalsManifest
 {
     public required string Id { get; init; }
     public required string Name { get; set; }
-    public required string Version { get; set; }
-    public required string EntryPoint { get; set; }
+    public required string Version { get; init; }
+    public required string EntryPoint { get; init; }
     public required string Dll { get; set; }
 
     public string? Author { get; set; }
     public string? Description { get; set; }
-    public string? ApiVersion { get; set; }
+    public required string ApiVersion { get; init; }
 
     public string[] Dependencies { get; set; } = [];
 }
