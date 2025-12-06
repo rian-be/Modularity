@@ -1,4 +1,9 @@
 ﻿using Microsoft.Build.Framework;
+using Signals.Manifest.BuildTask.Builders;
+using Signals.Manifest.BuildTask.Loader;
+using Signals.Manifest.BuildTask.Logging;
+using Signals.Manifest.BuildTask.Models;
+using Signals.Manifest.BuildTask.Utils;
 using Task = Microsoft.Build.Utilities.Task;
 
 namespace Signals.Manifest.BuildTask;
@@ -18,12 +23,9 @@ namespace Signals.Manifest.BuildTask;
 /// </remarks>
 public sealed class GenerateSignalManifestTask : Task
 {
-    [Required]
-    public string AssemblyPath { get; set; } = null!;
+    [Required] private string AssemblyPath { get; set; } = null!;
 
-    [Required]
-    public string OutputPath { get; set; } = null!;
-
+    [Required] private string OutputPath { get; set; } = null!;
     
     public override bool Execute()
     {
@@ -54,18 +56,7 @@ public sealed class GenerateSignalManifestTask : Task
             FileUtils.EnsureDirectory(OutputPath);
             FileUtils.WriteJson(outputFile, manifest);
 
-            Log.LogWarning($"""
-                            Signal manifest GENERATED automatically:
-                            {outputFile}
-
-                            ⚠ REVIEW REQUIRED:
-                            - Id
-                            - Name
-                            - Description
-                            - Author
-                            - Dependencies
-                            """);
-
+            SignalManifestLogHelper.LogGeneratedManifest(BuildEngine, null, outputFile);
             return true;
         }
         catch (Exception ex)

@@ -1,4 +1,4 @@
-﻿namespace Signals.Manifest.BuildTask;
+﻿namespace Signals.Manifest.BuildTask.Models;
 
 /// <summary>
 /// Represents the metadata of a signal plugin used during build tasks.
@@ -13,7 +13,7 @@
 /// </remarks>
 public sealed class SignalsManifest
 {
-    public required string Id { get; set; }
+    public required string Id { get; init; }
     public required string Name { get; set; }
     public required string Version { get; set; }
     public required string EntryPoint { get; set; }

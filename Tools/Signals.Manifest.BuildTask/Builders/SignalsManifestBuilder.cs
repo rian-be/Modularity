@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
+using Signals.Manifest.BuildTask.Models;
 
-namespace Signals.Manifest.BuildTask;
+namespace Signals.Manifest.BuildTask.Builders;
 
 /// <summary>
 /// Provides utility methods to build <see cref="SignalsManifest"/> instances for signal modules.

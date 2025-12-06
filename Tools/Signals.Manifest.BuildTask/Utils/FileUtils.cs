@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace Signals.Manifest.BuildTask;
+namespace Signals.Manifest.BuildTask.Utils;
 
 /// <summary>
 /// Provides utility methods for file and directory operations in the manifest build process.
