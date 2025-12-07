@@ -33,7 +33,7 @@ public abstract class SignalModuleBase : ISignalModule
         if (bus == null) throw new ArgumentNullException(nameof(bus));
 
         var subscriptionManager = ExtractSubscriptionManager(bus);
-        var registry = subscriptionManager as IRequestHandlerRegistry;
+        IRequestHandlerRegistry registry = subscriptionManager;
 
         var handlerTypes = new HandlerTypeScanner(GetType().Assembly).GetHandlers();
 

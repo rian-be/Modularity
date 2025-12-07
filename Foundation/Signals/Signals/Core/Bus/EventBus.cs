@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Signals.Core.Context;
 using Signals.Core.Events;
 using Signals.Core.Subscriptions;
 
@@ -53,10 +54,11 @@ public sealed class EventBus(ISubscriptionManager subscriptionManager, IPublishe
         var handler = registry.GetHandler<TRequest, TResponse>();
         if (handler == null)
             throw new InvalidOperationException($"No handler registered for {typeof(TRequest).Name}");
+        
+        var ctx = new SignalContext(EventContext.Create(), this);
 
-        return handler.Handle(request);
+        return handler.Handle(request, ctx);
     }
-
     
     public void SubscribeOnce<TEvent>(
         Func<TEvent, Task> handler,

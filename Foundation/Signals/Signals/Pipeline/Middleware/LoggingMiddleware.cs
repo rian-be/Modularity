@@ -1,4 +1,5 @@
-﻿using Signals.Core.Events;
+﻿using Signals.Core.Context;
+using Signals.Core.Events;
 using Signals.Delegates;
 
 namespace Signals.Pipeline.Middleware;
@@ -30,8 +31,8 @@ public sealed class LoggingMiddleware : IEventMiddleware
             $"corr={ctx.CorrelationId} | req={ctx.RequestId} | user={ctx.UserId}"
         );
         */
-        Console.WriteLine($"[EventBus] -> {evt.GetType().Name}");
+      //  Console.WriteLine($"[EventBus] -> {evt.GetType().Name}");
         await next(evt, ctx);
-        Console.WriteLine($"[EventBus] <- {evt.GetType().Name}");
+      //  Console.WriteLine($"[EventBus] <- {evt.GetType().Name}");
     }
 }
