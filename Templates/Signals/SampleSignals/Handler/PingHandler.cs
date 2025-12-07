@@ -1,5 +1,7 @@
-﻿using SampleSignals.Model.Ping;
+﻿using SampleSignals.Model;
+using SampleSignals.Model.Ping;
 using Signals.Attributes;
+using Signals.Core.Context;
 using Signals.Core.Events;
 
 namespace SampleSignals.Handler;
@@ -7,9 +9,9 @@ namespace SampleSignals.Handler;
 [HandlesRequest(typeof(PingEvent), typeof(PongEvent))]
 public class PingHandler : IRequestHandler<PingEvent, PongEvent>
 {
-    public Task<PongEvent> Handle(PingEvent evt)
+    public async Task<PongEvent> Handle(PingEvent evt, SignalContext ctx)
     {
-        Console.WriteLine($"Event received: {evt.Message} and reply was sent back");
-        return Task.FromResult(new PongEvent($"Pong to: {evt.Message}"));
+        await ctx.Emit(new ExampleEvent($"ExampleEvent received: {evt.Message}"));
+        return new PongEvent($"Pong to: {evt.Message}");
     }
 }

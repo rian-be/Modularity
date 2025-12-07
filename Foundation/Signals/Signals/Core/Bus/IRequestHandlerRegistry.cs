@@ -26,13 +26,7 @@ public interface IRequestHandlerRegistry
         where TRequest : IEvent
         where TResponse : IResponseEvent;
 
-    /// <summary>
-    /// Registers a request handler for a specific request/response type pair.
-    /// </summary>
-    /// <typeparam name="TRequest">The request event type.</typeparam>
-    /// <typeparam name="TResponse">The response event type.</typeparam>
-    /// <param name="handler">The handler instance to register.</param>
-    void RegisterHandler<TRequest, TResponse>(IRequestHandler<TRequest, TResponse> handler)
+    void RegisterHandler<TRequest, TResponse>(IRequestHandler<TRequest, TResponse> handler, IEventBus bus)
         where TRequest : IEvent
         where TResponse : IResponseEvent;
 }

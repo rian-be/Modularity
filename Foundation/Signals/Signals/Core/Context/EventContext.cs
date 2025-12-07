@@ -1,4 +1,4 @@
-﻿namespace Signals.Core.Events;
+﻿namespace Signals.Core.Context;
 
 /// <summary>
 /// Represents context information for an event as it flows through the pipeline.

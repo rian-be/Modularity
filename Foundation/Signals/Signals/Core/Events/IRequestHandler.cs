@@ -1,4 +1,5 @@
 ﻿using Signals.Core.Bus;
+using Signals.Core.Context;
 
 namespace Signals.Core.Events;
 
@@ -18,5 +19,5 @@ public interface IRequestHandler<in TRequest, TResponse>
     where TRequest : IEvent
     where TResponse : IResponseEvent
 {
-    Task<TResponse> Handle(TRequest request);
+    Task<TResponse> Handle(TRequest request, SignalContext ctx);
 }
