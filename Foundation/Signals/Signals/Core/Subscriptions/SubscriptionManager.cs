@@ -22,8 +22,6 @@ public sealed class SubscriptionManager(
     ConcurrentDictionary<Type, RequestHandlerCollection> requestHandlers
     ) : ISubscriptionManager
 {
-    private readonly ConcurrentDictionary<Type, object> _requestHandlers = new();
-
     #region Event Handlers
 
     /// <inheritdoc />

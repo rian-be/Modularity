@@ -24,29 +24,48 @@ public abstract class FluentSignalModuleBase : ISignalModule
 
     private ModuleManifest Manifest { get; set; } = null!;
 
-    protected void On<TEvent>(Func<TEvent, Task> handler) where TEvent : IEvent
+    protected void On<TEvent>(Func<TEvent, Task> handler)
+        where TEvent : IEvent
     {
-        if (_bus == null) throw new InvalidOperationException("EventBus not initialized");
-        _bus.Subscribe(handler);
+        EnsureInitialized();
+        _bus!.Subscribe(handler);
+    }
+    
+    protected void On<TEvent>(Func<TEvent, EventContext, Task> handler)
+        where TEvent : IEvent
+    {
+        EnsureInitialized();
+
+        _bus!.Subscribe<TEvent>(evt =>
+        {
+            var ctx = EventContext.Create();
+            return handler(evt, ctx);
+        });
     }
 
-    protected void On<TEvent>(Func<TEvent, EventContext, Task> handler) where TEvent : IEvent
-    {
-        if (_bus == null) throw new InvalidOperationException("EventBus not initialized");
-        _bus.Subscribe(handler);
-    }
-
+    /// <inheritdoc />
     public void RegisterSignals(IEventBus bus)
     {
         _bus = bus;
-        Manifest = Manifest with { Dll = GetType().Assembly.GetName().Name + ".dll" };
+        Manifest = Manifest with
+        {
+            Dll = GetType().
+                Assembly.GetName().Name + ".dll"
+        };
         OnRegister();
     }
-
+    
+    /// <inheritdoc />
     public virtual void UnregisterSignals(IEventBus bus)
     {
         
     }
     
     protected virtual void OnRegister() { }
+    
+    private void EnsureInitialized()
+    {
+        if (_bus == null)
+            throw new InvalidOperationException("EventBus not initialized. Did you forget to call RegisterSignals?");
+    }
 }

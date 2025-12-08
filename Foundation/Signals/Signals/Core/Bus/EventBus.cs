@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using Signals.Core.Context;
+﻿using Signals.Core.Context;
 using Signals.Core.Events;
 using Signals.Core.Subscriptions;
 
@@ -14,11 +13,15 @@ namespace Signals.Core.Bus;
 /// <item>Delegates subscription management to <see cref="ISubscriptionManager"/>.</item>
 /// <item>Delegates publishing of events to <see cref="IPublisher"/>, including middleware execution.</item>
 /// <item>Supports one-time handlers, handler filtering, and priority ordering.</item>
-/// <item>Thread-safe via <see cref="ConcurrentDictionary{TKey,TValue}"/> and internal handler collections.</item>
+/// <item>Supports request/response messaging via <see cref="Send{TRequest,TResponse}"/>.</item>
+/// <item>Creates <see cref="SignalContext"/> for each request/response invocation.</item>
 /// <item>Middleware can be injected via DI to extend event processing (logging, filtering, tracing, metrics, etc.).</item>
 /// </list>
 /// </remarks>
-public sealed class EventBus(ISubscriptionManager subscriptionManager, IPublisher publisher)
+
+public sealed class EventBus(
+    ISubscriptionManager subscriptionManager,
+    IPublisher publisher)
     : IEventBus
 {
     public ISubscriptionManager SubscriptionManager { get; } = subscriptionManager;
@@ -30,36 +33,8 @@ public sealed class EventBus(ISubscriptionManager subscriptionManager, IPublishe
         Func<TEvent, bool>? filter = null)
         where TEvent : IEvent
         => SubscriptionManager.Subscribe(handler, priority, filter);
-    
+
     /// <inheritdoc />
-    public void Subscribe<TEvent>(Func<TEvent, EventContext, Task> handler) where TEvent : IEvent
-    {
-        Subscribe((Func<TEvent, Task>)Wrapper);
-        return;
-
-        Task Wrapper(TEvent evt)
-        {
-            var ctx = EventContext.Create();
-            return handler(evt, ctx);
-        }
-    }
-    
-    public Task<TResponse> Send<TRequest, TResponse>(TRequest request)
-        where TRequest : IEvent
-        where TResponse : IResponseEvent
-    {
-        if (SubscriptionManager is not IRequestHandlerRegistry registry)
-            throw new InvalidOperationException("EventBus's subscription manager must implement IRequestHandlerRegistry");
-
-        var handler = registry.GetHandler<TRequest, TResponse>();
-        if (handler == null)
-            throw new InvalidOperationException($"No handler registered for {typeof(TRequest).Name}");
-        
-        var ctx = new SignalContext(EventContext.Create(), this);
-
-        return handler.Handle(request, ctx);
-    }
-    
     public void SubscribeOnce<TEvent>(
         Func<TEvent, Task> handler,
         int priority = 0,
@@ -72,11 +47,6 @@ public sealed class EventBus(ISubscriptionManager subscriptionManager, IPublishe
         where TEvent : IEvent
         => SubscriptionManager.Unsubscribe(handler);
 
-    public void Unsubscribe<TEvent>(Func<TEvent, EventContext, Task> handler) where TEvent : IEvent
-    {
-        throw new NotImplementedException();
-    }
-
     /// <inheritdoc />
     public void Subscribe(Type eventType, Func<IEvent, Task> handler)
     {
@@ -86,9 +56,10 @@ public sealed class EventBus(ISubscriptionManager subscriptionManager, IPublishe
         var method = typeof(ISubscriptionManager)
             .GetMethod(nameof(ISubscriptionManager.Subscribe))!
             .MakeGenericMethod(eventType);
+
         method.Invoke(SubscriptionManager, [handler, 0, null]);
     }
-
+    
     /// <inheritdoc />
     public void Unsubscribe(Type eventType, Func<IEvent, Task> handler)
     {
@@ -98,14 +69,33 @@ public sealed class EventBus(ISubscriptionManager subscriptionManager, IPublishe
         var method = typeof(ISubscriptionManager)
             .GetMethod(nameof(ISubscriptionManager.Unsubscribe))!
             .MakeGenericMethod(eventType);
+
         method.Invoke(SubscriptionManager, [handler]);
     }
-
+    
     /// <inheritdoc />
     public Task Publish(IEvent evt)
         => publisher.Publish(evt);
-
+    
     /// <inheritdoc />
     public Task PublishBatch(params IEvent[] events)
         => publisher.PublishBatch(events);
+
+    /// <inheritdoc />
+    public Task<TResponse> Send<TRequest, TResponse>(TRequest request)
+        where TRequest : IEvent
+        where TResponse : IResponseEvent
+    {
+        if (SubscriptionManager is not IRequestHandlerRegistry registry)
+            throw new InvalidOperationException(
+                "EventBus's subscription manager must implement IRequestHandlerRegistry");
+
+        var handler = registry.GetHandler<TRequest, TResponse>();
+        if (handler == null)
+            throw new InvalidOperationException(
+                $"No handler registered for {typeof(TRequest).Name}");
+
+        var ctx = new SignalContext(EventContext.Create(), this);
+        return handler.Handle(request, ctx);
+    }
 }
