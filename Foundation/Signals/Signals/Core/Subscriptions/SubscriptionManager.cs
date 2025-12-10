@@ -22,37 +22,71 @@ public sealed class SubscriptionManager(
     ConcurrentDictionary<Type, RequestHandlerCollection> requestHandlers
     ) : ISubscriptionManager
 {
+    private long _id;
+    
     #region Event Handlers
 
     /// <inheritdoc />
-    public void Subscribe<TEvent>(Func<TEvent, Task> handler, int priority = 0, Func<TEvent, bool>? filter = null) where TEvent : IEvent
+    public SubscriptionToken Subscribe<TEvent>(
+        Func<TEvent, Task> handler,
+        int priority = 0,
+        Func<TEvent, bool>? filter = null)
+        where TEvent : IEvent
         => AddHandler(handler, once: false, priority, filter);
-
+  
     /// <inheritdoc />
-    public void SubscribeOnce<TEvent>(Func<TEvent, Task> handler, int priority = 0, Func<TEvent, bool>? filter = null) where TEvent : IEvent
+    public SubscriptionToken SubscribeOnce<TEvent>(
+        Func<TEvent, Task> handler,
+        int priority = 0,
+        Func<TEvent, bool>? filter = null)
+        where TEvent : IEvent
         => AddHandler(handler, once: true, priority, filter);
-
+    
     /// <inheritdoc />
-    public void Unsubscribe<TEvent>(Func<TEvent, Task> handler) where TEvent : IEvent
+    public bool Unsubscribe(SubscriptionToken token)
     {
-        if (handlers.TryGetValue(typeof(TEvent), out var collection))
-            collection.Unsubscribe(e => handler((TEvent)e));
-    }
+        if (!handlers.TryGetValue(token.EventType, out var collection))
+            return false;
 
+        return collection.RemoveById(token.Id);
+    }
+    
     #endregion
     
-    private void AddHandler<TEvent>(Func<TEvent, Task> handler, bool once, int priority, Func<TEvent, bool>? filter) where TEvent : IEvent
+    private SubscriptionToken AddHandler<TEvent>(
+        Func<TEvent, Task> handler,
+        bool once,
+        int priority,
+        Func<TEvent, bool>? filter)
+        where TEvent : IEvent
     {
+        var id = Interlocked.Increment(ref _id);
+
         var wrapper = new HandlerWrapper(
-            Handler: e => handler((TEvent)e),
-            Priority: priority,
-            Filter: filter is not null ? new Func<IEvent, bool>(e => filter((TEvent)e)) : null,
-            Once: once
+            id,
+            e => handler((TEvent)e),
+            priority,
+            filter is null ? null : e => filter((TEvent)e),
+            once
         );
-        
-        handlers.GetOrAdd(typeof(TEvent), _ => new HandlerCollection()).Add(wrapper);
+
+        var collection = handlers.GetOrAdd(
+            typeof(TEvent),
+            _ => new HandlerCollection()
+        );
+
+        collection.Add(wrapper);
+
+        return new SubscriptionToken(typeof(TEvent), id);
     }
 
+    public HandlerWrapper? GetFirstHandler(Type eventType)
+    {
+        if (!handlers.TryGetValue(eventType, out var collection))
+            return null;
+
+        return collection.GetFirst();
+    }
     #region Request Handlers
 
     public IRequestHandler<TRequest, TResponse>? GetHandler<TRequest, TResponse>()

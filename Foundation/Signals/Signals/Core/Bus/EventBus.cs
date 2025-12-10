@@ -15,6 +15,7 @@ namespace Signals.Core.Bus;
 /// <item>Supports one-time handlers, handler filtering, and priority ordering.</item>
 /// <item>Supports request/response messaging via <see cref="Send{TRequest,TResponse}"/>.</item>
 /// <item>Creates <see cref="SignalContext"/> for each request/response invocation.</item>
+/// <item>Uses <see cref="SignalCallGuard"/> to prevent recursive signal dispatch and excessive depth.</item>
 /// <item>Middleware can be injected via DI to extend event processing (logging, filtering, tracing, metrics, etc.).</item>
 /// </list>
 /// </remarks>
@@ -27,28 +28,24 @@ public sealed class EventBus(
     public ISubscriptionManager SubscriptionManager { get; } = subscriptionManager;
 
     /// <inheritdoc />
-    public void Subscribe<TEvent>(
+    public SubscriptionToken Subscribe<TEvent>(
         Func<TEvent, Task> handler,
         int priority = 0,
         Func<TEvent, bool>? filter = null)
         where TEvent : IEvent
         => SubscriptionManager.Subscribe(handler, priority, filter);
 
-    /// <inheritdoc />
-    public void SubscribeOnce<TEvent>(
+    public SubscriptionToken SubscribeOnce<TEvent>(
         Func<TEvent, Task> handler,
         int priority = 0,
         Func<TEvent, bool>? filter = null)
         where TEvent : IEvent
         => SubscriptionManager.SubscribeOnce(handler, priority, filter);
 
-    /// <inheritdoc />
-    public void Unsubscribe<TEvent>(Func<TEvent, Task> handler)
-        where TEvent : IEvent
-        => SubscriptionManager.Unsubscribe(handler);
+    public bool Unsubscribe(SubscriptionToken token)
+        => SubscriptionManager.Unsubscribe(token);
 
-    /// <inheritdoc />
-    public void Subscribe(Type eventType, Func<IEvent, Task> handler)
+    public SubscriptionToken Subscribe(Type eventType, Func<IEvent, Task> handler)
     {
         if (!typeof(IEvent).IsAssignableFrom(eventType))
             throw new ArgumentException("Type must implement IEvent", nameof(eventType));
@@ -57,20 +54,9 @@ public sealed class EventBus(
             .GetMethod(nameof(ISubscriptionManager.Subscribe))!
             .MakeGenericMethod(eventType);
 
-        method.Invoke(SubscriptionManager, [handler, 0, null]);
-    }
-    
-    /// <inheritdoc />
-    public void Unsubscribe(Type eventType, Func<IEvent, Task> handler)
-    {
-        if (!typeof(IEvent).IsAssignableFrom(eventType))
-            throw new ArgumentException("Type must implement IEvent", nameof(eventType));
-
-        var method = typeof(ISubscriptionManager)
-            .GetMethod(nameof(ISubscriptionManager.Unsubscribe))!
-            .MakeGenericMethod(eventType);
-
-        method.Invoke(SubscriptionManager, [handler]);
+        return (SubscriptionToken)method.Invoke(
+            SubscriptionManager,
+            [handler, 0, null])!;
     }
     
     /// <inheritdoc />
@@ -82,7 +68,7 @@ public sealed class EventBus(
         => publisher.PublishBatch(events);
 
     /// <inheritdoc />
-    public Task<TResponse> Send<TRequest, TResponse>(TRequest request)
+    public async Task<TResponse> Send<TRequest, TResponse>(TRequest request)
         where TRequest : IEvent
         where TResponse : IResponseEvent
     {
@@ -90,12 +76,19 @@ public sealed class EventBus(
             throw new InvalidOperationException(
                 "EventBus's subscription manager must implement IRequestHandlerRegistry");
 
-        var handler = registry.GetHandler<TRequest, TResponse>();
-        if (handler == null)
-            throw new InvalidOperationException(
-                $"No handler registered for {typeof(TRequest).Name}");
+        var handler = registry.GetHandler<TRequest, TResponse>()
+                      ?? throw new InvalidOperationException(
+                          $"No handler registered for {typeof(TRequest).Name}");
 
-        var ctx = new SignalContext(EventContext.Create(), this);
-        return handler.Handle(request, ctx);
+        var ctx = new SignalContext(
+            EventContext.Create(),
+            this
+        );
+
+        var guard = new SignalCallGuard();
+        using (guard.EnterScope<TRequest>())
+        {
+            return await handler.Handle(request, ctx);
+        }
     }
 }

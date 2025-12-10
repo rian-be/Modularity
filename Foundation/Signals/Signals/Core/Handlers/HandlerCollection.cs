@@ -16,33 +16,43 @@ namespace Signals.Core.Handlers;
 /// </remarks>
 public sealed class HandlerCollection
 {
-    private readonly ConcurrentDictionary<HandlerWrapper, byte> _handlers = new();
+    
+    private readonly ConcurrentDictionary<long, HandlerWrapper> _handlers = new();
 
-    public void Add(HandlerWrapper wrapper) => _handlers.TryAdd(wrapper, 0);
+    public void Add(HandlerWrapper wrapper)
+        => _handlers.TryAdd(wrapper.Id, wrapper);
 
     public HandlerWrapper[] GetSnapshot(IEvent evt)
     {
-        return _handlers.Keys
-            .Where(h => h.Filter == null || (h.Filter(evt)))
+        return _handlers.Values
+            .Where(h => h.Filter == null || h.Filter(evt))
             .OrderByDescending(h => h.Priority)
             .ToArray();
-
     }
+    
+    public HandlerWrapper? GetFirst()
+    {
+        HandlerWrapper? best = null;
 
+        foreach (var h in _handlers.Values)
+        {
+            if (best == null || h.Priority > best.Priority)
+                best = h;
+        }
+
+        return best;
+    }
+    
+    public bool RemoveById(long id)
+        => _handlers.TryRemove(id, out _);
+    
     public void RemoveOnceHandlers()
     {
-        var remaining = _handlers.Keys.Where(h => !h.Once).ToArray();
-        _handlers.Clear();
-        foreach (var h in remaining)
-            _handlers.TryAdd(h, 0);
-    }
-
-    public void Unsubscribe(Func<IEvent, Task> handler)
-    {
-        var remaining = _handlers.Keys.Where(h => h.Handler != handler).ToArray();
-        _handlers.Clear();
-        foreach (var h in remaining)
-            _handlers.TryAdd(h, 0);
+        foreach (var h in _handlers.Values)
+        {
+            if (h.Once)
+                _handlers.TryRemove(h.Id, out _);
+        }
     }
 
     public bool IsEmpty => _handlers.IsEmpty;

@@ -1,4 +1,5 @@
 ﻿using Signals.Core.Events;
+using Signals.Core.Subscriptions;
 
 namespace Signals.Core.Bus;
 
@@ -10,6 +11,7 @@ namespace Signals.Core.Bus;
 /// <item>Supports asynchronous event publishing via <see cref="Publish"/> and <see cref="PublishBatch"/>.</item>
 /// <item>Provides subscription management with priorities, filters, and one-time handlers.</item>
 /// <item>Enables request/response communication using <see cref="Send{TRequest,TResponse}"/>.</item>
+/// <item>Returns <see cref="SubscriptionToken"/> for handler registration, enabling unsubscribing.</item>
 /// <item>Acts as the core messaging backbone for the Signals runtime.</item>
 /// </list>
 /// </remarks>
@@ -30,51 +32,28 @@ public interface IEventBus
     /// <summary>
     /// Subscribes a handler to a specific event type.
     /// </summary>
-    /// <typeparam name="TEvent">Type of the event.</typeparam>
-    /// <param name="handler">Asynchronous handler to execute when the event is published.</param>
-    /// <param name="priority">Execution priority; higher values are executed first.</param>
-    /// <param name="filter">Optional predicate to filter incoming events.</param>
-    void Subscribe<TEvent>(
+    /// <typeparam name="TEvent">Type of the event to subscribe to.</typeparam>
+    /// <param name="handler">Asynchronous handler function.</param>
+    /// <param name="priority">Optional priority for handler execution order.</param>
+    /// <param name="filter">Optional filter to conditionally invoke the handler.</param>
+    /// <returns>A <see cref="SubscriptionToken"/> representing this subscription.</returns>
+    SubscriptionToken Subscribe<TEvent>(
         Func<TEvent, Task> handler,
         int priority = 0,
         Func<TEvent, bool>? filter = null)
         where TEvent : IEvent;
 
-    /// <summary>
-    /// Subscribes a one-time handler to a specific event type.
-    /// </summary>
-    /// <typeparam name="TEvent">Type of the event.</typeparam>
-    /// <param name="handler">Asynchronous handler to execute once.</param>
-    /// <param name="priority">Execution priority; higher values are executed first.</param>
-    /// <param name="filter">Optional predicate to filter incoming events.</param>
-    void SubscribeOnce<TEvent>(
+    
+    SubscriptionToken SubscribeOnce<TEvent>(
         Func<TEvent, Task> handler,
         int priority = 0,
         Func<TEvent, bool>? filter = null)
         where TEvent : IEvent;
-
-    /// <summary>
-    /// Unsubscribes a handler from a specific event type.
-    /// </summary>
-    /// <typeparam name="TEvent">Type of the event.</typeparam>
-    /// <param name="handler">Handler instance to remove.</param>
-    void Unsubscribe<TEvent>(Func<TEvent, Task> handler)
-        where TEvent : IEvent;
-
-    /// <summary>
-    /// Subscribes a non-generic handler to a specific event type.
-    /// </summary>
-    /// <param name="eventType">Runtime type of the event.</param>
-    /// <param name="handler">Asynchronous handler to execute.</param>
-    void Subscribe(Type eventType, Func<IEvent, Task> handler);
-
-    /// <summary>
-    /// Unsubscribes a non-generic handler from a specific event type.
-    /// </summary>
-    /// <param name="eventType">Runtime type of the event.</param>
-    /// <param name="handler">Handler instance to remove.</param>
-    void Unsubscribe(Type eventType, Func<IEvent, Task> handler);
-
+    
+    SubscriptionToken Subscribe(Type eventType, Func<IEvent, Task> handler);
+    
+    bool Unsubscribe(SubscriptionToken token);
+    
     /// <summary>
     /// Sends a request event and awaits a typed response.
     /// </summary>
@@ -85,7 +64,9 @@ public interface IEventBus
     /// <exception cref="InvalidOperationException">
     /// Thrown when no handler is registered for the given request type.
     /// </exception>
-    Task<TResponse> Send<TRequest, TResponse>(TRequest request)
+    Task<TResponse> Send<TRequest, TResponse>(
+        TRequest request)
         where TRequest : IEvent
         where TResponse : IResponseEvent;
+
 }

@@ -10,65 +10,63 @@ namespace Signals.Core.Context;
 /// </summary>
 /// <param name="EventCtx">The current event context for tracing and correlation.</param>
 /// <param name="Bus">The event bus instance.</param>
-public sealed record SignalContext(EventContext EventCtx, IEventBus Bus, ILogger? Logger = null)
+/// <param name="Logger">Optional logger.</param>
+public sealed record SignalContext(
+    EventContext EventCtx,
+    IEventBus Bus,
+    ILogger? Logger = null)
 {
-    /// <summary>
-    /// Publishes a single event through the bus.
-    /// </summary>
-    /// <param name="evt">The event to publish.</param>
-    public Task Emit(IEvent evt)
+    public Task<TResponse> EmitSingle<TEvent, TResponse>(TEvent evt)
+        where TEvent : IEvent
+        where TResponse : IResponseEvent
     {
-        if (evt is IEventWithContext ctxEvt)
-            ctxEvt.SetContext(EventCtx);
+        AttachContext(evt);
+
+        return Bus.Send<TEvent, TResponse>(evt);
+    }
+
+    public Task<TResponse> EmitResponse<TResponse>(IEvent evt)
+        where TResponse : IResponseEvent
+    {
+        AttachContext(evt);
 
         Logger?.LogInformation(
-            "[SignalContext] Emit: {EventType}, TraceParent={TraceParent}, CorrelationId={CorrelationId}",
+            "[SignalContext] EmitResponse: {EventType}, TraceParent={TraceParent}, CorrelationId={CorrelationId}",
             evt.GetType().Name,
             EventCtx.TraceParent,
             EventCtx.CorrelationId
         );
-        return Bus.Publish(evt);
+
+        return Bus.Send<IEvent, TResponse>(evt);
     }
-    /// <summary>
-    /// Publishes multiple events through the bus using the same <see cref="EventContext"/>.
-    /// </summary>
-    /// <param name="events">Events to publish.</param>
-    public Task EmitBatch(params IEvent[] events)
+
+    public async Task EmitSingleRaw(IEvent evt)
     {
-        foreach (var evt in events.OfType<IEventWithContext>())
-            evt.SetContext(EventCtx);
+        AttachContext(evt);
 
         Logger?.LogInformation(
-            "[SignalContext] EmitBatch: {Count} events, TraceParent={TraceParent}, CorrelationId={CorrelationId}",
-            events.Length,
-            EventCtx.TraceParent,
-            EventCtx.CorrelationId
+            "[SignalContext] EmitSingleRaw: {EventType}",
+            evt.GetType().Name
         );
 
-        return Bus.PublishBatch(events);
+        if (Bus is not EventBus busImpl)
+            throw new InvalidOperationException(
+                "EmitSingleRaw requires concrete EventBus");
+
+        var wrapper = busImpl.SubscriptionManager
+            .GetFirstHandler(evt.GetType());
+
+        if (wrapper is null)
+            throw new InvalidOperationException(
+                $"No handler registered for {evt.GetType().Name}"
+            );
+
+        await wrapper.Handler(evt);
     }
-    /// <summary>
-    /// Sends a request and awaits a typed response.
-    /// </summary>
-    /// <typeparam name="TRequest">Request type implementing <see cref="IEvent"/>.</typeparam>
-    /// <typeparam name="TResponse">Expected response type implementing <see cref="IResponseEvent"/>.</typeparam>
-    /// <param name="req">The request instance.</param>
-    /// <returns>The response event.</returns>
-    public async Task<TResponse> Request<TRequest, TResponse>(TRequest req)
-        where TRequest : IEvent
-        where TResponse : IResponseEvent
-    {
-        if (req is IEventWithContext ctxReq)
-        {
-            ctxReq.SetContext(EventCtx);
-        }
 
-        Logger?.LogInformation(
-            "[SignalContext] Request: {RequestType}, TraceParent={TraceParent}, CorrelationId={CorrelationId}",
-            typeof(TRequest).Name,
-            EventCtx.TraceParent,
-            EventCtx.CorrelationId
-        );
-        return await Bus.Send<TRequest, TResponse>(req);
+    private void AttachContext(IEvent evt)
+    {
+        if (evt is IEventWithContext ctxEvt)
+            ctxEvt.SetContext(EventCtx);
     }
 }

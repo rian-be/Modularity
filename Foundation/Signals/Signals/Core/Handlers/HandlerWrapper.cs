@@ -19,9 +19,16 @@ namespace Signals.Core.Handlers;
 /// <param name="Priority">Execution priority; higher values run earlier.</param>
 /// <param name="Filter">Optional predicate to filter which events are handled.</param>
 /// <param name="Once">Indicates if the handler should be invoked only once.</param>
-public readonly record struct HandlerWrapper(
-    Func<IEvent, Task> Handler,
-    int Priority = 0,
-    Func<IEvent, bool>? Filter = null,
-    bool Once = false
-);
+public sealed class HandlerWrapper(
+    long id,
+    Func<IEvent, Task> handler,
+    int priority,
+    Func<IEvent, bool>? filter,
+    bool once)
+{
+    public long Id { get; } = id;
+    public Func<IEvent, Task> Handler { get; } = handler;
+    public Func<IEvent, bool>? Filter { get; } = filter;
+    public int Priority { get; } = priority;
+    public bool Once { get; } = once;
+}
