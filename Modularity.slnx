@@ -1,5 +1,7 @@
 <Solution>
-  <Folder Name="/Foundation/" />
+  <Folder Name="/Foundation/">
+    <Project Path="Foundation/Core/Core.csproj" />
+  </Folder>
   <Folder Name="/Foundation/Signals/">
     <File Path="Foundation/Signals/README.md" />
     <Project Path="Foundation/Signals/Signals.ApiBase/Signals.ApiBase.csproj" />
