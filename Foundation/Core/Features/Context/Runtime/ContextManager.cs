@@ -1,6 +1,6 @@
-﻿using Core.Features.Context.Interfaces;
+﻿using Core.Features.Context.Abstractions;
 
-namespace Core.Features.Context;
+namespace Core.Features.Context.Runtime;
 
 /// <summary>
 /// Manages the execution of code within a specific <typeparamref name="TContext"/> scope.

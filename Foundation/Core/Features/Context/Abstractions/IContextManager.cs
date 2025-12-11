@@ -1,4 +1,4 @@
-﻿namespace Core.Features.Context.Interfaces;
+﻿namespace Core.Features.Context.Abstractions;
 
 /// <summary>
 /// Manages the execution of operations within a specific <typeparamref name="TContext"/>.

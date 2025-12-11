@@ -1,6 +1,6 @@
-﻿using Core.Features.Context.Interfaces;
+﻿using Core.Features.Context.Abstractions;
 
-namespace Core.Features.Context;
+namespace Core.Features.Context.Runtime;
 
 /// <summary>
 /// Provides access to the current <typeparamref name="TContext"/> instance.

@@ -1,4 +1,4 @@
-﻿namespace Core.Features.Context.Interfaces;
+﻿namespace Core.Features.Context.Abstractions;
 
 /// <summary>
 /// Provides access to the current context instance of type <typeparamref name="TContext"/>.

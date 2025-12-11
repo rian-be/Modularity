@@ -1,4 +1,4 @@
-﻿namespace Core.Features.Context.Interfaces;
+﻿namespace Core.Features.Context.Abstractions;
 
 /// <summary>
 /// Represents generic context with unique identifier and creation timestamp.
