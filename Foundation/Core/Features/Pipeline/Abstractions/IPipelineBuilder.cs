@@ -1,4 +1,6 @@
-﻿namespace Core.Features.Pipeline.Abstractions;
+﻿using Core.Features.Pipeline.Abstractions.Middleware;
+
+namespace Core.Features.Pipeline.Abstractions;
 
 /// <summary>
 /// Defines a builder interface for configuring a middleware pipeline for a specific context type.
@@ -31,27 +33,27 @@ public interface IPipelineBuilder<TContext>
     /// </summary>
     /// <param name="predicate">Predicate to locate the reference middleware.</param>
     /// <param name="middleware">Middleware to insert.</param>
-    void UseAfter(Func<IMiddleware<TContext>, bool> predicate, IMiddleware<TContext> middleware);
+    void UseAfter(Predicate<IMiddleware<TContext>> predicate, IMiddleware<TContext> middleware);
 
     /// <summary>
     /// Inserts a middleware immediately before the first middleware matching the given predicate.
     /// </summary>
     /// <param name="predicate">Predicate to locate the reference middleware.</param>
     /// <param name="middleware">Middleware to insert.</param>
-    void UseBefore(Func<IMiddleware<TContext>, bool> predicate, IMiddleware<TContext> middleware);
+    void UseBefore(Predicate<IMiddleware<TContext>> predicate, IMiddleware<TContext> middleware);
 
     /// <summary>
-    /// Adds a middleware that executes only when the specified condition on the context is true.
+    /// Adds a middleware that executes only when the specified condition on the context evaluates to true.
     /// </summary>
-    /// <param name="condition">Predicate to evaluate the context.</param>
-    /// <param name="middleware">Middleware to conditionally execute.</param>
+    /// <param name="condition">Predicate to evaluate the context for conditional execution.</param>
+    /// <param name="middleware">Middleware to execute conditionally.</param>
     void UseWhen(Func<TContext, bool> condition, IMiddleware<TContext> middleware);
 
     /// <summary>
     /// Creates a conditional branch in the pipeline that executes a separate pipeline configuration
     /// when the given condition evaluates to true.
     /// </summary>
-    /// <param name="condition">Predicate to determine branch execution.</param>
+    /// <param name="condition">Predicate that determines if the branch should be executed.</param>
     /// <param name="configurePipeline">Action to configure the branch pipeline.</param>
     void UseBranch(
         Func<TContext, bool> condition,

@@ -1,4 +1,4 @@
-﻿using Core.Features.Pipeline.Abstractions;
+﻿using Core.Features.Pipeline.Abstractions.Middleware;
 
 namespace Core.Features.Pipeline.Middleware;
 

@@ -3,6 +3,7 @@ using Core.Features.Context.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Polygon.Core.Context;
+using Polygon.Core.Pipeline;
 using Polygon.Signals;
 using Signals.Core.Bus;
 using Signals.Core.Handlers;
@@ -66,6 +67,7 @@ services.AddSingleton<IModuleActivator, DefaultModuleActivator>();
 
 services.AddSingleton<SignalsLoader>();
 services.AddSingleton<SignalsDemo>();
+services.AddSingleton<TestingPipeline>();
 
 // ============================
 // BUILD
@@ -74,10 +76,13 @@ services.AddSingleton<SignalsDemo>();
 var sp = services.BuildServiceProvider();
 
 var testingContext = TestingContext.Create(sp);
-await testingContext.RunDemo();
+//await testingContext.RunDemo();
 
 Console.WriteLine("\n" + new string('═', 70) + "\n");
 
 // Run signals demo
 var signalsDemo = sp.GetRequiredService<SignalsDemo>();
-await signalsDemo.RunDemo();
+//await signalsDemo.RunDemo();
+
+var testingPipeline = sp.GetRequiredService<TestingPipeline>();
+await testingPipeline.RunDemo();

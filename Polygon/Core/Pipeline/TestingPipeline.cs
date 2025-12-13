@@ -1,105 +1,94 @@
-﻿using Core.Features.Pipeline.Middleware;
+﻿using Core.Features.Pipeline.Diagnostics;
 using Core.Features.Pipeline.Runtime;
 using Polygon.Core.Context;
-using Polygon.Core.Pipeline.Middleware;
+using Polygon.Core.Pipeline.Middleware.AttributesImpl;
+using Polygon.Core.Pipeline.Middleware.Impl;
 
 namespace Polygon.Core.Pipeline;
 
 public class TestingPipeline
 {
-    public async Task RunDemo()
+    private readonly PipelineBuilder<MyContext> _builder;
+  
+    public TestingPipeline()
     {
-        // -----------------------
-        //  Build main pipeline
-        // -----------------------
-        var builder = new PipelineBuilder<MyContext>();
-
-        Console.WriteLine("Adding LoggingMiddleware to main pipeline...");
+        _builder = new PipelineBuilder<MyContext>();
+        ConfigureMainPipeline(_builder);
+    }
+    
+    private void ConfigureMainPipeline(PipelineBuilder<MyContext> builder)
+    {
         builder.Use(new LoggingMiddleware());
+        builder.UseWhen(ctx => ctx.Roles.Contains("User"), new ValidationMiddleware());
 
-        Console.WriteLine("Adding ValidationMiddleware conditionally for Admins...");
-        builder.UseWhen(ctx => ctx.Roles.Contains("Admin"), new ValidationMiddleware());
-
-        // -----------------------
-        //  Build branch pipeline
-        // -----------------------
         var branchBuilder = new PipelineBuilder<MyContext>();
-        Console.WriteLine("Adding LoggingMiddleware to branch pipeline...");
         branchBuilder.Use(new LoggingMiddleware());
-
-        Console.WriteLine("Adding ValidationMiddleware conditionally for Developers in branch...");
+        branchBuilder.Use(new LoggingMiddlewareAttributesImpl());
         branchBuilder.UseWhen(ctx => ctx.Roles.Contains("Developer"), new ValidationMiddleware());
 
-        Console.WriteLine("Adding BranchMiddleware to main pipeline for TenantId 'tenant-456'...");
-        builder.Use(new BranchMiddleware<MyContext>(
+        builder.UseBranch(
             condition: ctx => ctx.TenantId == "tenant-456",
-            branch: branchBuilder
-        ));
+            configurePipeline: b =>
+            {
+                foreach (var mw in branchBuilder.Middlewares)
+                    b.Use(mw);
+            }
+        );
+    }
+    
+    public async Task RunDemo()
+    {
+        using var scope = PipelineDebugScope.Begin(out var debug);
 
-        // -----------------------
-        //  Create executor
-        // -----------------------
-        var executor = new PipelineExecutor<MyContext>(builder);
+        var executor = new PipelineExecutor<MyContext>(_builder, true);
 
-        // -----------------------
-        //  Attach inspector
-        // -----------------------
-        var inspector = new PipelineInspector<MyContext>(builder.Middlewares);
-
-        Console.WriteLine();
-        Console.WriteLine("=== Registered middleware in main pipeline ===");
-        foreach (var mw in inspector.GetMiddlewares())
-        {
-            Console.WriteLine($"- {mw.GetType().Name}");
-        }
-
-        Console.WriteLine();
-        Console.WriteLine("Removing ValidationMiddleware dynamically...");
-        inspector.Remove(mw => mw is ValidationMiddleware);
-
-        Console.WriteLine("=== Middleware after removal ===");
-        foreach (var mw in inspector.GetMiddlewares())
-        {
-            Console.WriteLine($"- {mw.GetType().Name}");
-        }
-
-        // -----------------------
-        //  Create context
-        // -----------------------
         var context = MyContext.Create(
             userId: "user-123",
             tenantId: "tenant-456",
-            roles: ["Admin", "Developer"],
+            roles: ["Admin", "User"],
             userEmail: "alice@company.com"
         );
-
         context.Metadata["DemoStep"] = "PipelineDebug";
 
-        // -----------------------
-        //  Execute pipeline
-        // -----------------------
-        Console.WriteLine();
-        Console.WriteLine("=== Executing pipeline ===");
         await executor.ExecuteAsync(context);
-        Console.WriteLine("=== Pipeline execution complete ===");
 
-        // -----------------------
-        //  Post-execution debug
-        // -----------------------
+        DisplayDebugInfo(context, debug);
+        DisplayInspectorInfo();
+    }
+
+    private void DisplayDebugInfo(MyContext context, PipelineDebugContext debug)
+    {
         Console.WriteLine();
+        Console.WriteLine("=== Pipeline execution complete ===");
         Console.WriteLine("Context metadata after execution:");
         foreach (var kvp in context.Metadata)
-        {
             Console.WriteLine($"- {kvp.Key}: {kvp.Value}");
-        }
 
-        Console.WriteLine();
         Console.WriteLine("Enabled features:");
         foreach (var f in context.EnabledFeatures)
-        {
             Console.WriteLine($"- {f}");
-        }
 
-        await Task.CompletedTask;
+        Console.WriteLine();
+        Console.WriteLine("Pipeline debug steps:");
+        foreach (var step in debug.Steps)
+        {
+            if (step.NextCalled)
+            {
+                Console.WriteLine($"{step.Middleware} | Duration={step.Duration?.TotalMilliseconds:F3}ms | NextCalled={step.NextCalled}");
+            }
+        }
+    }
+    
+    private void DisplayInspectorInfo()
+    {
+        var inspector = new PipelineInspector<MyContext>(_builder.Middlewares);
+
+        Console.WriteLine("=== Registered middleware ===");
+        foreach (var mw in inspector.GetMiddlewares())
+            Console.WriteLine($"- {mw.GetType().Name}");
+
+        Console.WriteLine("Pipeline middleware descriptors:");
+        foreach (var d in inspector.GetDescriptors())
+            Console.WriteLine($"- {d.Name} [{d.Kind}] Conditional={d.IsConditional}");
     }
 }

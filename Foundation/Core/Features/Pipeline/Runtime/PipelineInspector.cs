@@ -1,4 +1,6 @@
 ﻿using Core.Features.Pipeline.Abstractions;
+using Core.Features.Pipeline.Abstractions.Middleware;
+using Core.Features.Pipeline.Runtime.Providers;
 
 namespace Core.Features.Pipeline.Runtime;
 
@@ -14,31 +16,31 @@ namespace Core.Features.Pipeline.Runtime;
 /// <item>Implements <see cref="IPipelineInspector{TContext}"/> for standard inspection interface.</item>
 /// </list>
 /// </remarks>
-public class PipelineInspector<TContext>(List<Func<TContext, Func<Task>, Task>> middlewares)
+public class PipelineInspector<TContext>(
+    IEnumerable<IMiddleware<TContext>> middlewares,
+    MiddlewareDescriptorProvider? descriptorProvider = null)
     : IPipelineInspector<TContext>
 {
+    private readonly List<IMiddleware<TContext>> _middlewares = middlewares.ToList();
+    private readonly MiddlewareDescriptorProvider _descriptorProvider = descriptorProvider ?? new MiddlewareDescriptorProvider();
+
+    public IReadOnlyList<IMiddleware<TContext>> GetMiddlewares() => _middlewares;
+
     /// <inheritdoc />
-    public IReadOnlyList<IMiddleware<TContext>> GetMiddlewares() =>
-        middlewares
-            .Select(mw => mw.Target)
-            .OfType<IMiddleware<TContext>>()
-            .ToArray();
-    
-    /// <inheritdoc />
-    public bool Remove(Func<IMiddleware<TContext>, bool> predicate)
+    public IReadOnlyList<IMiddlewareDescriptor> GetDescriptors()
     {
-        ArgumentNullException.ThrowIfNull(predicate);
-
-        var toRemove = middlewares
-            .Where(mw => mw.Target is IMiddleware<TContext> imw && predicate(imw))
+        return _middlewares
+            .Select(mw => _descriptorProvider.GetDescriptor(mw))
             .ToList();
-
-        foreach (var mw in toRemove)
-            middlewares.Remove(mw);
-
-        return toRemove.Count > 0;
     }
     
     /// <inheritdoc />
-    public void Clear() => middlewares.Clear();
+    public bool Remove(Predicate<IMiddleware<TContext>> predicate)
+    {
+        var removed = _middlewares.RemoveAll(predicate);
+        return removed > 0;
+    }
+
+    /// <inheritdoc />
+    public void Clear() => _middlewares.Clear();
 }

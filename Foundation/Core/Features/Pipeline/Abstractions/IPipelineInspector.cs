@@ -1,4 +1,6 @@
-﻿namespace Core.Features.Pipeline.Abstractions;
+﻿using Core.Features.Pipeline.Abstractions.Middleware;
+
+namespace Core.Features.Pipeline.Abstractions;
 
 /// <summary>
 /// Provides inspection and management capabilities for a middleware pipeline.
@@ -19,12 +21,14 @@ public interface IPipelineInspector<in TContext>
     /// </summary>
     IReadOnlyList<IMiddleware<TContext>> GetMiddlewares();
 
+    IReadOnlyList<IMiddlewareDescriptor> GetDescriptors();
+    
     /// <summary>
     /// Removes middleware matching the specified predicate.
     /// </summary>
     /// <param name="predicate">Function to select middleware to remove.</param>
     /// <returns>True if any middleware were removed; otherwise, false.</returns>
-    bool Remove(Func<IMiddleware<TContext>, bool> predicate);
+    bool Remove(Predicate<IMiddleware<TContext>> predicate);
 
     /// <summary>
     /// Clears all middleware from the pipeline.
