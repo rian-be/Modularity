@@ -1,6 +1,6 @@
-﻿using Core.Features.Context.Abstractions;
+﻿using ModularityKit.Context.Abstractions;
 
-namespace Core.Features.Context.Runtime;
+namespace ModularityKit.Context.Runtime;
 
 /// <summary>
 /// Manages the execution of code within a specific <typeparamref name="TContext"/> scope.

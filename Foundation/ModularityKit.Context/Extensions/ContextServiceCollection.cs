@@ -1,9 +1,9 @@
-﻿using Core.Features.Context.Abstractions;
-using Core.Features.Context.ReadOnly;
-using Core.Features.Context.Runtime;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
+using ModularityKit.Context.Abstractions;
+using ModularityKit.Context.ReadOnly;
+using ModularityKit.Context.Runtime;
 
-namespace Core.Features.Context.Extensions;
+namespace ModularityKit.Context.Extensions;
 
 /// <summary>
 /// Provides extension methods to register context-related services into the DI container.

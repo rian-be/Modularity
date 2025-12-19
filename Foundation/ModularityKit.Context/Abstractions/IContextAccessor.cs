@@ -1,4 +1,4 @@
-﻿namespace Core.Features.Context.Abstractions;
+﻿namespace ModularityKit.Context.Abstractions;
 
 /// <summary>
 /// Provides access to the current context instance of type <typeparamref name="TContext"/>.

@@ -1,6 +1,6 @@
-﻿using Core.Features.Context.Abstractions;
+﻿using ModularityKit.Context.Abstractions;
 
-namespace Core.Features.Context.Runtime;
+namespace ModularityKit.Context.Runtime;
 
 /// <summary>
 /// Provides access to the current <typeparamref name="TContext"/> instance.

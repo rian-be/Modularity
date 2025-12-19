@@ -1,6 +1,6 @@
-﻿using Core.Features.Context.Abstractions;
+﻿using ModularityKit.Context.Abstractions;
 
-namespace Core.Features.Context.Runtime;
+namespace ModularityKit.Context.Runtime;
 
 /// <summary>
 /// Thread-safe and async-safe storage for <typeparamref name="TContext"/> instances using <see cref="AsyncLocal{T}"/>.

@@ -1,4 +1,4 @@
-﻿namespace Core.Features.Context.Abstractions;
+﻿namespace ModularityKit.Context.Abstractions;
 
 /// <summary>
 /// Manages the execution of operations within a specific <typeparamref name="TContext"/>.

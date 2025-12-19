@@ -1,4 +1,4 @@
-﻿namespace Core.Features.Context.Abstractions;
+﻿namespace ModularityKit.Context.Abstractions;
 
 /// <summary>
 /// Represents generic context with unique identifier and creation timestamp.

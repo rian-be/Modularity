@@ -1,6 +1,6 @@
-﻿using Core.Features.Context.Abstractions;
+﻿using ModularityKit.Context.Abstractions;
 
-namespace Core.Features.Context.ReadOnly;
+namespace ModularityKit.Context.ReadOnly;
 
 /// <summary>
 /// Immutable snapshot of a context exposing only read-only properties.
