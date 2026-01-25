@@ -6,9 +6,9 @@ namespace ModularityKit.Mutators.Abstractions.Results;
 /// </summary>
 public sealed class ValidationResult
 {
-    private readonly List<ValidationError> _errors = new();
-    private readonly List<ValidationWarning> _warnings = new();
-    private readonly List<ValidationInfo> _info = new();
+    private readonly List<ValidationError> _errors = [];
+    private readonly List<ValidationWarning> _warnings = [];
+    private readonly List<ValidationInfo> _info = [];
 
     /// <summary>
     /// Indicates whether the validation passed successfully.
