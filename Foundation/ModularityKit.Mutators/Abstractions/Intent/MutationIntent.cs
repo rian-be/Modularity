@@ -21,16 +21,6 @@ namespace ModularityKit.Mutators.Abstractions.Intent;
 /// </list>
 /// </para>
 /// </remarks>
-/// <example>
-/// <code>
-/// var intent = MutationIntent.Create("EnableFeature", "Configuration");
-/// intent.Description = "Enable new payment processing feature for beta users.";
-/// intent.RiskLevel = MutationRiskLevel.Medium;
-/// intent.IsReversible = true;
-/// intent.Tags = new HashSet&lt;string&gt; { "beta", "payment" };
-/// intent.Metadata["initiator"] = "admin@ryze.com";
-/// </code>
-/// </example>
 public sealed class MutationIntent
 {
     /// <summary>
