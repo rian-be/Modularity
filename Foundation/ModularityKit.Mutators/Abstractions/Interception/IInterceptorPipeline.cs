@@ -1,10 +1,9 @@
 using ModularityKit.Mutators.Abstractions.Changes;
 using ModularityKit.Mutators.Abstractions.Context;
 using ModularityKit.Mutators.Abstractions.Intent;
-using ModularityKit.Mutators.Abstractions.Interception;
 using ModularityKit.Mutators.Abstractions.Policies;
 
-namespace ModularityKit.Mutators.Runtime.Interception;
+namespace ModularityKit.Mutators.Abstractions.Interception;
 
 /// <summary>
 /// Represents pipeline of mutation interceptors that can observe and react to mutation execution events.
@@ -19,7 +18,7 @@ namespace ModularityKit.Mutators.Runtime.Interception;
 /// in a deterministic order for each mutation lifecycle event.
 /// </para>
 /// </remarks>
-public interface IInterceptorPipeline
+internal interface IInterceptorPipeline
 {
     /// <summary>
     /// Registers an interceptor in the pipeline.

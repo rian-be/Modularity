@@ -1,4 +1,5 @@
 namespace ModularityKit.Mutators.Abstractions.Policies;
+
 /// <summary>
 /// Represents a requirement that must be fulfilled before a mutation can proceed.
 /// </summary>

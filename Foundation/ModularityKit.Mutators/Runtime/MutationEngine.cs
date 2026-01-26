@@ -3,6 +3,7 @@ using ModularityKit.Mutators.Abstractions;
 using ModularityKit.Mutators.Abstractions.Audit;
 using ModularityKit.Mutators.Abstractions.Changes;
 using ModularityKit.Mutators.Abstractions.Context;
+using ModularityKit.Mutators.Abstractions.Engine;
 using ModularityKit.Mutators.Abstractions.Exceptions;
 using ModularityKit.Mutators.Abstractions.History;
 using ModularityKit.Mutators.Abstractions.Interception;
@@ -11,7 +12,7 @@ using ModularityKit.Mutators.Abstractions.Policies;
 using ModularityKit.Mutators.Abstractions.Results;
 using ModularityKit.Mutators.Runtime.Interception;
 using ModularityKit.Mutators.Runtime.Policies;
-using ModularityExecutionContext = ModularityKit.Mutators.Abstractions.ExecutionContext;
+using ModularityExecutionContext = ModularityKit.Mutators.Abstractions.Context.ExecutionContext;
 
 namespace ModularityKit.Mutators.Runtime;
 
@@ -272,10 +273,7 @@ internal sealed class MutationEngine(
         {
             var decision = policy.Evaluate(mutation, state);
 
-            if (!decision.IsAllowed)
-                return Task.FromResult(decision);
-
-            if (decision.Modifications != null)
+            if (!decision.IsAllowed || decision.Modifications != null)
                 return Task.FromResult(decision);
         }
 
@@ -383,7 +381,7 @@ internal sealed class MutationEngine(
         await _historyStore.StoreAsync(entry, cancellationToken);
     }
 
-    private long EstimateStateSize(object state)
+    private static long EstimateStateSize(object state)
     {
         //todo: Simple estimation - in real implementation would use proper serialization
         return 1024; // Placeholder

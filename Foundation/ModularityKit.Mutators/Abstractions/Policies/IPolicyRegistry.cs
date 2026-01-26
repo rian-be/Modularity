@@ -1,6 +1,4 @@
-using ModularityKit.Mutators.Abstractions.Policies;
-
-namespace ModularityKit.Mutators.Runtime.Policies;
+namespace ModularityKit.Mutators.Abstractions.Policies;
 
 /// <summary>
 /// Registry for mutation policies.
@@ -12,7 +10,7 @@ namespace ModularityKit.Mutators.Runtime.Policies;
 /// validations, and authorization logic before applying a mutation.
 /// </para>
 /// </remarks>
-public interface IPolicyRegistry
+internal interface IPolicyRegistry
 {
     /// <summary>
     /// Registers a policy for a given state type.

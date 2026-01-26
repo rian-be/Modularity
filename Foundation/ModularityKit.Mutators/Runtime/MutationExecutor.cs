@@ -1,16 +1,17 @@
 using ModularityKit.Mutators.Abstractions;
+using ModularityKit.Mutators.Abstractions.Engine;
 using ModularityKit.Mutators.Abstractions.Exceptions;
 using ModularityKit.Mutators.Abstractions.Results;
-using ModularityExecutionContext = ModularityKit.Mutators.Abstractions.ExecutionContext;
+using ModularityExecutionContext = ModularityKit.Mutators.Abstractions.Context.ExecutionContext;
 
 namespace ModularityKit.Mutators.Runtime;
 
 /// <summary>
-/// Responsible for executing a single mutation against a given state.
+/// Responsible for executing single mutation against given state.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="MutationExecutor"/> applies mutations in a synchronous fashion (the <see cref="IMutation{TState}.Apply"/>
+/// <see cref="MutationExecutor"/> applies mutations in synchronous fashion (the <see cref="IMutation{TState}.Apply"/>
 /// method is executed inline) while respecting timeouts and cancellation tokens provided via
 /// <see cref="System.Threading.ExecutionContext"/> and <paramref>
 ///     <name>cancellationToken</name>
@@ -18,7 +19,7 @@ namespace ModularityKit.Mutators.Runtime;
 /// .
 /// </para>
 /// <para>
-/// This class does **not** perform policy checks, auditing, or interceptor pipelines — it is a low-level executor
+/// This class does not perform policy checks, auditing, or interceptor pipelines — it is a low level executor
 /// used by <see cref="MutationEngine"/> to actually run mutations.
 /// </para>
 /// </remarks>

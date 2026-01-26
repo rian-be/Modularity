@@ -1,4 +1,7 @@
+using ModularityKit.Mutators.Abstractions.Engine;
+
 namespace ModularityKit.Mutators.Abstractions.Policies;
+
 /// <summary>
 /// Represents a policy that decides whether a mutation can be applied.
 /// Policies are a FIRST-CLASS governance mechanism in the mutation framework.

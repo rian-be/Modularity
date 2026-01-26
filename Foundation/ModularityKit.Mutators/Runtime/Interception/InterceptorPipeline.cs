@@ -20,9 +20,9 @@ namespace ModularityKit.Mutators.Runtime.Interception;
 /// Method calls are executed asynchronously to integrate with the ModularityKit mutation pipeline.
 /// </para>
 /// </remarks>
-public sealed class InterceptorPipeline : IInterceptorPipeline
+internal sealed class InterceptorPipeline : IInterceptorPipeline
 {
-    private readonly List<IMutationInterceptor> _interceptors = new();
+    private readonly List<IMutationInterceptor> _interceptors = [];
     private readonly Lock _lock = new();
 
     /// <summary>
