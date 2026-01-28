@@ -45,7 +45,7 @@ internal static class EmergencyIncreaseScenario
         {
             UserQuotas = new Dictionary<string, int>
             {
-                ["alice"] = 90,
+                ["alice"] = 50,
                 ["bob"] = 95
             }
         };
