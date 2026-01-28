@@ -29,7 +29,8 @@ using ModularityKit.Mutators.Runtime.Loggers;
 using Mutators.Examples.BillingQuotas.Policies;
 using Mutators.Examples.IamRoles.Policies;
 using Mutators.Examples.WorkflowApprovals.Policies;
-using TwoManApprovalPolicy = Mutators.Examples.IamRoles.Policies.RequireTwoManApprovalPolicy;
+using IamTwoManApprovalPolicy = Mutators.Examples.IamRoles.Policies.RequireTwoManApprovalPolicy;
+using FeatureFlagsTwoManApprovalPolicy = Mutators.Examples.FeatureFlags.Policies.RequireTwoManApprovalPolicy;
 
 var services = new ServiceCollection();
 
@@ -43,9 +44,9 @@ var engine = provider.GetRequiredService<IMutationEngine>();
 // 3. Register policies
 engine.RegisterPolicy(new MaxQuotaPolicy());
 engine.RegisterPolicy(new PreventNegativeQuotaPolicy());
-engine.RegisterPolicy(new TwoManApprovalPolicy());
+engine.RegisterPolicy(new IamTwoManApprovalPolicy());
 engine.RegisterPolicy(new PreventLastAdminRemovalPolicy());
-engine.RegisterPolicy(new RequireTwoManApprovalPolicy());
+engine.RegisterPolicy(new FeatureFlagsTwoManApprovalPolicy());
 engine.RegisterPolicy(new EnforceOrderPolicy());
 engine.RegisterPolicy(new RequireManagerApprovalPolicy());
 

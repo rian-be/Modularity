@@ -57,7 +57,7 @@ internal static class MonthlyResetScenario
         var ctx = MutationContext.System(reason: "Monthly reset");
 
         var mutations = state.UserQuotas.Keys
-            .Select(IMutation<QuotaState> (user) => new ResetQuotaMutation(user, ctx))
+            .Select(user => new ResetQuotaMutation(user, ctx))
             .ToArray();
 
         var result = await engine.ExecuteBatchAsync(mutations, state);

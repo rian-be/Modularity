@@ -23,13 +23,16 @@ internal sealed record EnableFeatureMutation(string FeatureName, MutationContext
 
     public MutationResult<FeatureFlagsState> Apply(FeatureFlagsState state)
     {
+        if (state.Flags.TryGetValue(FeatureName, out var oldValue) && oldValue)
+            return MutationResult<FeatureFlagsState>.Success(state, ChangeSet.Empty);
+
         var newFlags = new Dictionary<string, bool>(state.Flags)
         {
             [FeatureName] = true
         };
         var newState = state with { Flags = newFlags };
         var changes = ChangeSet.Single(
-            StateChange.Modified($"Flags.{FeatureName}", false, true)
+            StateChange.Modified($"Flags.{FeatureName}", oldValue, true)
         );
         return MutationResult<FeatureFlagsState>.Success(newState, changes);
     }
@@ -38,7 +41,13 @@ internal sealed record EnableFeatureMutation(string FeatureName, MutationContext
     {
         var result = new ValidationResult();
         if (string.IsNullOrEmpty(FeatureName))
+        {
             result.AddError("FeatureName", "Feature name cannot be empty");
+        }
+        else if (!state.Flags.ContainsKey(FeatureName))
+        {
+            result.AddError("FeatureName", $"Feature '{FeatureName}' does not exist");
+        }
         return result;
     }
 

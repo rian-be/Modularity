@@ -23,8 +23,15 @@ internal sealed class EnforceOrderPolicy : IMutationPolicy<ApprovalWorkflowState
     /// <returns>A <see cref="PolicyDecision"/> indicating whether the mutation is allowed or denied.</returns>
     public PolicyDecision Evaluate(IMutation<ApprovalWorkflowState> mutation, ApprovalWorkflowState state)
     {
-        if (mutation is not ApproveStepMutation { StepIndex: > 0 } stepMut) return PolicyDecision.Allow();
+        if (mutation is not ApproveStepMutation { StepIndex: > 0 } stepMut) 
+            return PolicyDecision.Allow();
         
+        if (stepMut.StepIndex - 1 >= state.Steps.Count)
+        {
+            return PolicyDecision.Deny(
+                $"Step index {stepMut.StepIndex} is out of range for the current workflow.");
+        }
+
         var previous = state.Steps[stepMut.StepIndex - 1];
         if (previous.Status != StepStatus.Approved)
         {

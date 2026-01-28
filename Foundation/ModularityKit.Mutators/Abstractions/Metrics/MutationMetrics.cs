@@ -26,6 +26,11 @@ namespace ModularityKit.Mutators.Abstractions.Metrics;
 public sealed class MutationMetrics
 {
     /// <summary>
+    /// Timestamp when the mutation was recorded.
+    /// </summary>
+    public DateTimeOffset RecordedAt { get; init; } = DateTimeOffset.UtcNow;
+
+    /// <summary>
     /// Total execution time of the mutation.
     /// </summary>
     public TimeSpan ExecutionTime { get; init; }

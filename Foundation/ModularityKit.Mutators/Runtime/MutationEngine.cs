@@ -3,6 +3,7 @@ using ModularityKit.Mutators.Abstractions;
 using ModularityKit.Mutators.Abstractions.Audit;
 using ModularityKit.Mutators.Abstractions.Changes;
 using ModularityKit.Mutators.Abstractions.Context;
+using ModularityKit.Mutators.Abstractions.Effects;
 using ModularityKit.Mutators.Abstractions.Engine;
 using ModularityKit.Mutators.Abstractions.Exceptions;
 using ModularityKit.Mutators.Abstractions.History;
@@ -200,49 +201,29 @@ internal sealed class MutationEngine(
         var allChanges = new ChangeSet();
         var currentState = state;
 
-        using var semaphore = new SemaphoreSlim(_options.MaxConcurrentMutations);
-
-        var tasks = mutations.Select(async mutation =>
+        foreach (var mutation in mutations)
         {
-            await semaphore.WaitAsync(cancellationToken);
-            try
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
+            var result = await ExecuteAsync(mutation, currentState, cancellationToken);
+            results.Add(result);
+
+            if (result.IsSuccess)
             {
-                var result = await ExecuteAsync(mutation, currentState, cancellationToken);
-
-                lock (results)
-                {
-                    results.Add(result);
-                    if (result.IsSuccess)
-                    {
-                        currentState = result.NewState!;
-                        foreach (var change in result.Changes.Changes)
-                            allChanges.Add(change);
-                    }
-                }
-
-                if (!result.IsSuccess && _options.StopBatchOnFirstFailure)
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                return result;
+                currentState = result.NewState!;
+                foreach (var change in result.Changes.Changes)
+                    allChanges.Add(change);
             }
-            finally
+            else if (_options.StopBatchOnFirstFailure)
             {
-                semaphore.Release();
+                break;
             }
-        }).ToList();
-
-        try
-        {
-            await Task.WhenAll(tasks);
-        }
-        catch (OperationCanceledException)
-        {
-            // Batch stopped due to failure or StopBatchOnFirstFailure
         }
 
         stopwatch.Stop();
 
-        var allSucceeded = results.All(r => r.IsSuccess);
+        var allSucceeded = results.Count > 0 && results.All(r => r.IsSuccess);
 
         return new BatchMutationResult<TState>
         {
@@ -304,9 +285,40 @@ internal sealed class MutationEngine(
         MutationResult<TState> result,
         IReadOnlyDictionary<string, object> modifications)
     {
-        // Policy modifications can add metadata, side effects, etc.
-        // This is extensible based on specific needs
-        return result;
+        if (modifications == null || modifications.Count == 0)
+            return result;
+
+        var newState = result.NewState;
+        var sideEffects = result.SideEffects.ToList();
+
+        foreach (var mod in modifications)
+        {
+            switch (mod.Key)
+            {
+                case "State" when mod.Value is TState stateValue:
+                    newState = stateValue;
+                    break;
+                case "SideEffect" when mod.Value is SideEffect effect:
+                    sideEffects.Add(effect);
+                    break;
+                case "SideEffects" when mod.Value is IEnumerable<SideEffect> effects:
+                    sideEffects.AddRange(effects);
+                    break;
+            }
+        }
+
+        return new MutationResult<TState>
+        {
+            IsSuccess = result.IsSuccess,
+            NewState = newState,
+            Changes = result.Changes,
+            ValidationResult = result.ValidationResult,
+            PolicyDecisions = result.PolicyDecisions,
+            SideEffects = sideEffects,
+            Metrics = result.Metrics,
+            Exception = result.Exception,
+            CompletedAt = result.CompletedAt
+        };
     }
 
     private async Task AuditSuccessAsync<TState>(
@@ -387,9 +399,15 @@ internal sealed class MutationEngine(
         TimeSpan duration,
         CancellationToken cancellationToken)
     {
+        var stateId = mutation.Context.StateId ?? mutation.Context.CorrelationId;
+        
+        if (string.IsNullOrEmpty(stateId))
+            return;
+
         var entry = new MutationHistoryEntry
         {
             ExecutionId = executionId,
+            StateId = stateId,
             Intent = mutation.Intent,
             Context = mutation.Context,
             Changes = result.Changes,
@@ -406,32 +424,4 @@ internal sealed class MutationEngine(
         //todo: Simple estimation - in real implementation would use proper serialization
         return 1024; // Placeholder
     }
-}
-
-public sealed class MutationStatistics
-{
-    /// <summary>
-    /// Total number of executed mutations in the aggregation period.
-    /// </summary>
-    public long TotalExecuted { get; init; }
-
-    /// <summary>
-    /// Average execution time of mutations.
-    /// </summary>
-    public TimeSpan AverageExecutionTime { get; init; }
-
-    /// <summary>
-    /// Median (P50) execution time.
-    /// </summary>
-    public TimeSpan MedianExecutionTime { get; init; }
-
-    /// <summary>
-    /// 95th percentile execution time.
-    /// </summary>
-    public TimeSpan P95ExecutionTime { get; init; }
-
-    /// <summary>
-    /// Timestamp of the last statistics update.
-    /// </summary>
-    public DateTimeOffset LastUpdatedAt { get; init; }
 }

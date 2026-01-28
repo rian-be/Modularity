@@ -22,6 +22,11 @@ namespace ModularityKit.Mutators.Abstractions.Context;
 public sealed record MutationContext
 {
     /// <summary>
+    /// Identifier of the state being mutated (if applicable).
+    /// </summary>
+    public string? StateId { get; init; }
+
+    /// <summary>
     /// Identifier of the actor performing the mutation.
     /// </summary>
     public string? ActorId { get; init; }

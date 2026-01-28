@@ -45,7 +45,14 @@ internal static class RejectedScenario
         var systemCtx = MutationContext.System("Start workflow", correlationId: "workflow-456");
         var start = new StartApprovalMutation("initiator", ["Step1", "Step2", "Step3"], systemCtx);
         var result = await engine.ExecuteAsync(start, state);
-        state = result.NewState!;
+
+        if (!result.IsSuccess || result.NewState == null)
+        {
+            Console.WriteLine("✗ Failed to start workflow.");
+            return;
+        }
+
+        state = result.NewState;
 
         var approvers = new[] { "alice", "bob", "carol" };
 

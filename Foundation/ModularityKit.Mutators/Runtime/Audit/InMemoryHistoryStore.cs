@@ -132,7 +132,15 @@ internal sealed class InMemoryHistoryStore : IMutationHistoryStore
     /// Extracts a state ID from a mutation history entry.
     /// </summary>
     /// <param name="entry">The entry to extract from.</param>
-    /// <returns>The extracted state ID, or a new GUID if none is available.</returns>
-    private string ExtractStateId(MutationHistoryEntry entry) =>
-        entry.Context.CorrelationId ?? Guid.NewGuid().ToString();
+    /// <returns>The extracted state ID.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when StateId is missing.</exception>
+    private string ExtractStateId(MutationHistoryEntry entry)
+    {
+        if (string.IsNullOrWhiteSpace(entry.StateId))
+        {
+            throw new InvalidOperationException("Stable StateId is required for history lookups.");
+        }
+
+        return entry.StateId;
+    }
 }

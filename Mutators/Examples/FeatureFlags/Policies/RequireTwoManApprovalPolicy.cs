@@ -22,18 +22,21 @@ public sealed class RequireTwoManApprovalPolicy : IMutationPolicy<FeatureFlagsSt
             return PolicyDecision.Allow(Name);
 
         if (!mutation.Context.Metadata.TryGetValue("approvedBy", out var approvedObj))
-            return PolicyDecision.Deny(Name, "Critical feature requires two-man approval (none provided)");
+            return PolicyDecision.Deny("Critical feature requires two-man approval (none provided)", Name);
 
-        var approvedBy = approvedObj switch
+        var approvedBy = (approvedObj switch
         {
-            string s => s.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)).ToArray(),
-            IEnumerable<string> arr => arr.ToArray(),
-            _ => []
-        };
+            string s => s.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)),
+            IEnumerable<string> arr => arr,
+            _ => (IEnumerable<string>)[]
+        })
+        .Where(x => !string.Equals(x, mutation.Context.ActorId, StringComparison.OrdinalIgnoreCase))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
 
         return approvedBy.Length switch
         {
-            < 2 => PolicyDecision.Deny(Name, "Critical feature requires at least two approvers"),
+            < 2 => PolicyDecision.Deny("Critical feature requires at least two distinct approvers (excluding the actor)", Name),
             _ => PolicyDecision.Allow(Name)
         };
     }

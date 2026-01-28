@@ -73,9 +73,11 @@ internal sealed class MetricsCollectorImpl : IMetricsCollector
     {
         lock (_lock)
         {
-            var metrics = _metrics.Values.ToList();
+            var filteredMetrics = _metrics.Values
+                .Where(m => m.RecordedAt >= from && m.RecordedAt <= to)
+                .ToList();
 
-            if (metrics.Count == 0)
+            if (filteredMetrics.Count == 0)
             {
                 return Task.FromResult(new AggregatedMetrics
                 {
@@ -84,20 +86,23 @@ internal sealed class MetricsCollectorImpl : IMetricsCollector
                 });
             }
 
-            var executionTimes = metrics.Select(m => m.ExecutionTime).OrderBy(t => t).ToList();
+            var executionTimes = filteredMetrics.Select(m => m.ExecutionTime).OrderBy(t => t).ToList();
+            var durationSeconds = (to - from).TotalSeconds;
+            var throughput = durationSeconds > 0 ? filteredMetrics.Count / durationSeconds : 0;
 
             return Task.FromResult(new AggregatedMetrics
             {
                 From = from,
                 To = to,
-                TotalMutations = metrics.Count,
+                TotalMutations = filteredMetrics.Count,
                 AverageExecutionTime = TimeSpan.FromMilliseconds(
                     executionTimes.Average(t => t.TotalMilliseconds)),
                 MinExecutionTime = executionTimes.First(),
                 MaxExecutionTime = executionTimes.Last(),
                 P50ExecutionTime = executionTimes[executionTimes.Count / 2],
                 P95ExecutionTime = executionTimes[(int)(executionTimes.Count * 0.95)],
-                P99ExecutionTime = executionTimes[(int)(executionTimes.Count * 0.99)]
+                P99ExecutionTime = executionTimes[(int)(executionTimes.Count * 0.99)],
+                ThroughputPerSecond = throughput
             });
         }
     }

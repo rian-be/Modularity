@@ -21,6 +21,11 @@ public sealed class MutationHistoryEntry
     public string ExecutionId { get; init; } = string.Empty;
 
     /// <summary>
+    /// Identifier of the state this mutation was applied to.
+    /// </summary>
+    public string StateId { get; init; } = string.Empty;
+
+    /// <summary>
     /// The intent behind the mutation.
     /// </summary>
     public MutationIntent Intent { get; init; } = null!;

@@ -31,13 +31,20 @@ public sealed class RequireTwoManApprovalPolicy
 
         var context = mutation.Context;
 
-        if (!context.Metadata.TryGetValue("approvedBy", out var approver))
+        if (!context.Metadata.TryGetValue("approvedBy", out var approvedObj))
         {
             return PolicyDecision.Deny(
                 "Critical mutation requires second approval (approvedBy missing)");
         }
 
-        if (ReferenceEquals(approver, context.ActorId))
+        var approvers = approvedObj switch
+        {
+            string s => s.Split(',').Select(x => x.Trim()).Where(x => !string.IsNullOrEmpty(x)),
+            IEnumerable<string> arr => arr,
+            _ => [approvedObj?.ToString() ?? string.Empty]
+        };
+
+        if (approvers.Any(a => string.Equals(a, context.ActorId, StringComparison.OrdinalIgnoreCase)))
         {
             return PolicyDecision.Deny(
                 "Second approval must come from a different user");
