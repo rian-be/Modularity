@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ModularityKit.Mutators.Abstractions;
 using ModularityKit.Mutators.Abstractions.Engine;
-using ModularityKit.Mutators.Abstractions.Interception;
 using ModularityKit.Mutators.Runtime;
 using ModularityKit.Mutators.Runtime.Loggers;
 using Mutators.Examples.BillingQuotas.Policies;
